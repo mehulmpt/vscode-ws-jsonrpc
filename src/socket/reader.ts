@@ -15,7 +15,7 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 		super()
 		this.socket.onMessage((message: Buffer | string) => {
 			const HANDSHAKE_SUCCESS = typeof message !== 'string'
-			if (HANDSHAKE_SUCCESS) this.readMessage(message)
+			if (HANDSHAKE_SUCCESS) this.readMessage(message.toString('utf8'))
 		})
 		this.socket.onError(error => this.fireError(error))
 		this.socket.onClose((code, reason) => {
