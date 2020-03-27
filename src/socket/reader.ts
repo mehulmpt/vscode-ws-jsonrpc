@@ -5,7 +5,6 @@
 
 import { DataCallback, AbstractMessageReader } from 'vscode-jsonrpc/lib/messageReader'
 import { IWebSocket } from './socket'
-import { LSP_HANDSHAKE_HELLO } from '..'
 
 export class WebSocketMessageReader extends AbstractMessageReader {
 	protected state: 'initial' | 'listening' | 'closed' = 'initial'
@@ -14,10 +13,9 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 
 	constructor(protected readonly socket: IWebSocket) {
 		super()
-		this.socket.onMessage((message: string) => {
-			const HANDSHAKE_SUCCESS = (message as string).startsWith(LSP_HANDSHAKE_HELLO)
-			if (HANDSHAKE_SUCCESS)
-				this.readMessage(message.slice(LSP_HANDSHAKE_HELLO.length, message.length))
+		this.socket.onMessage((message: Buffer | string) => {
+			const HANDSHAKE_SUCCESS = typeof message !== 'string'
+			if (HANDSHAKE_SUCCESS) this.readMessage(message)
 		})
 		this.socket.onError(error => this.fireError(error))
 		this.socket.onClose((code, reason) => {

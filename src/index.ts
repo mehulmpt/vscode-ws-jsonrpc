@@ -8,5 +8,3 @@ export * from './disposable'
 export * from './socket'
 export * from './logger'
 export * from './connection'
-
-export const LSP_HANDSHAKE_HELLO = 'LSP_MESSAGE'
