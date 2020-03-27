@@ -1,7 +1,8 @@
-import { Disposable } from "../disposable";
-import { IConnection } from "../server/connection";
+/// <reference types="node" />
+import { Disposable } from '../disposable';
+import { IConnection } from '../server/connection';
 export interface IWebSocket extends Disposable {
-    send(content: string): void;
+    send(content: string | Buffer): void;
     onMessage(cb: (data: any) => void): void;
     onError(cb: (reason: any) => void): void;
     onClose(cb: (code: number, reason: string) => void): void;
