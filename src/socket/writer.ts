@@ -16,7 +16,10 @@ export class WebSocketMessageWriter extends AbstractMessageWriter {
 
 	write(msg: Message): void {
 		try {
-			const content = new Buffer(JSON.stringify(msg))
+			const payload = JSON.stringify(msg)
+			const contentLength = payload + 1 // enter key
+
+			const content = Buffer.from(`Content-Type: ${contentLength}\r\n\r\n${payload}\n`)
 			this.socket.send(content)
 		} catch (e) {
 			this.errorCount++
