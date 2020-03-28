@@ -11,25 +11,29 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 	protected callback: DataCallback | undefined
 	protected readonly events: { message?: any; error?: any }[] = []
 
-	pendingTCPChunks: string[]
+	pendingTCPChunks: string[] = []
 
 	constructor(protected readonly socket: IWebSocket) {
 		super()
-		this.socket.onMessage((message: Buffer | string) => {
+		this.socket.onMessage((message: ArrayBuffer | string) => {
 			const HANDSHAKE_SUCCESS = typeof message !== 'string'
 			if (HANDSHAKE_SUCCESS) {
 				// message for this only
 
-				let info = message.toString('utf8')
+				let utf8decoder = new TextDecoder()
+				let info = utf8decoder.decode(new Uint8Array(message as ArrayBuffer))
+				// debugger
 				try {
 					// docker container could send data in chunks
-					this.pendingTCPChunks.join('') + info
-					JSON.parse(info)
+					info = this.pendingTCPChunks.join('') + info
 
+					JSON.parse(info)
 					// success!
+					console.log('Success! Clearing chunks')
+					this.pendingTCPChunks = []
 				} catch (error) {
 					// still an error
-					console.warn('Adding to pending chunk')
+					console.warn('Adding to pending chunk => ', info, error)
 					this.pendingTCPChunks.push(info)
 					return
 				}
