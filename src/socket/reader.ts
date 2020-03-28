@@ -6,23 +6,64 @@
 import { DataCallback, AbstractMessageReader } from 'vscode-jsonrpc/lib/messageReader'
 import { IWebSocket } from './socket'
 
-function sliceAnyHeaders(string: string) {
-	// ! TODO: Fix this "hacky" slice
-	const splitter = string.split('\r\n\r\n')
+// function sliceAnyHeaders(string: string) {
+// 	// ! TODO: Fix this "hacky" slice
+// 	const splitter = string.split('\r\n\r\n')
 
-	if (splitter.length > 1) {
-		// content headers might be present
-		return splitter[1].trim()
-	}
-	return splitter[0].trim()
-}
+// 	if (splitter.length > 1) {
+// 		// content headers might be present
+// 		return splitter[1].trim()
+// 	}
+// 	return splitter[0].trim()
+// }
 
 export class WebSocketMessageReader extends AbstractMessageReader {
 	protected state: 'initial' | 'listening' | 'closed' = 'initial'
 	protected callback: DataCallback | undefined
 	protected readonly events: { message?: any; error?: any }[] = []
 
-	pendingTCPChunks: string[] = []
+	pendingTCPChunk: string = ''
+
+	getReadableChunks(data: string) {
+		// Explanation:
+		// 0. Remove newlines
+		// 1. Start matching { <-- start of JSON character
+		// 2. Match as much as you can until you get a } followed by C
+		// 3. It'll also match } followed by a $ in case a perfect chunk arrives
+		// 4. It'll also match only opening { without a closing json matching a broken chunk (parent chunk)
+		// 5. It'll also match a closing } without an opening } matching a broken chunk (child chunk)
+
+		data = data.replace(/\r|\n/gm, '')
+
+		const regex =
+			this.pendingTCPChunk === '' ? /((\{)(.*?)(\}|$))(C|$)/g : /((\{|^)(.*?)(\}|$))(C|$)/g
+
+		// const test1 = /(\{(.*?)\})(C|$)/g
+
+		let match
+
+		debugger
+		while (true) {
+			match = regex.exec(data)
+			if (!match) break
+
+			const possibleJSON = match[1]
+
+			try {
+				const payload = JSON.parse(this.pendingTCPChunk + possibleJSON)
+				// success
+				this.pendingTCPChunk = ''
+				this.readMessage(payload)
+
+				console.log('Sending payload to read successfully')
+			} catch (error) {
+				// corrupted payload
+				console.log('Corrupted payload received => ' + possibleJSON)
+				this.pendingTCPChunk += possibleJSON
+				break // this should technically be the point where no matches should happen anyway
+			}
+		}
+	}
 
 	constructor(protected readonly socket: IWebSocket) {
 		super()
@@ -35,26 +76,9 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 				// message for this reader only
 
 				let utf8decoder = new TextDecoder()
-				let info = sliceAnyHeaders(
-					utf8decoder.decode(new Uint8Array(message as ArrayBuffer))
-				)
+				let text = utf8decoder.decode(new Uint8Array(message as ArrayBuffer))
 
-				// debugger
-				console.warn('Chunk value: ', info)
-				try {
-					// docker container could send data in chunks
-					info = this.pendingTCPChunks.join('') + info
-
-					JSON.parse(info)
-					// success!
-					console.log('Success! Clearing chunks')
-					this.pendingTCPChunks = []
-					this.readMessage(info)
-				} catch (error) {
-					// still an error
-					console.warn('Adding to pending chunk => ', info, error)
-					this.pendingTCPChunks.push(info)
-				}
+				this.getReadableChunks(text)
 			}
 		})
 		this.socket.onError(error => this.fireError(error))
@@ -89,10 +113,10 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 
 	protected readMessage(message: any): void {
 		if (this.state === 'initial') {
-			this.events.splice(0, 0, { message })
+			this.events.splice(0, 0, { message: message.toString() })
 		} else if (this.state === 'listening') {
-			const data = JSON.parse(message)
-			this.callback!(data)
+			// const data = JSON.parse(message)
+			this.callback!(message) // already JSON parse'd
 		}
 	}
 
