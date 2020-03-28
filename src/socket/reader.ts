@@ -8,7 +8,7 @@ import { IWebSocket } from './socket'
 
 function sliceAnyHeaders(string: string) {
 	// ! TODO: Fix this "hacky" slice
-	const splitter = string.split('\r\n')
+	const splitter = string.split('\r\n\r\n')
 
 	if (splitter.length > 1) {
 		// content headers might be present
