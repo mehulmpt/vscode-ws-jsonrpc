@@ -63,6 +63,21 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 				break // this should technically be the point where no matches should happen anyway
 			}
 		}
+
+		if (this.pendingTCPChunk !== '') {
+			// try to parse the just receievd corrupted payload?
+			try {
+				const payload = JSON.parse(this.pendingTCPChunk)
+				// success
+				this.pendingTCPChunk = ''
+				this.readMessage(payload)
+
+				console.log('Sending corrupted payload to read successfully')
+			} catch (error) {
+				// corrupted payload
+				console.log('Still waiting for more data....')
+			}
+		}
 	}
 
 	constructor(protected readonly socket: IWebSocket) {
