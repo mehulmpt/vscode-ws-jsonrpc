@@ -12,9 +12,9 @@ function sliceAnyHeaders(string: string) {
 
 	if (splitter.length > 1) {
 		// content headers might be present
-		return splitter[1]
+		return splitter[1].trim()
 	}
-	return splitter[0]
+	return splitter[0].trim()
 }
 
 export class WebSocketMessageReader extends AbstractMessageReader {
@@ -37,6 +37,7 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 				)
 
 				// debugger
+				console.warn('Chunk value: ', info)
 				try {
 					// docker container could send data in chunks
 					info = this.pendingTCPChunks.join('') + info
