@@ -29,6 +29,8 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 		this.socket.onMessage((message: ArrayBuffer | string) => {
 			const HANDSHAKE_SUCCESS = typeof message !== 'string'
 
+			console.warn('SUCCESSFUL HANDSHAKE? ', HANDSHAKE_SUCCESS)
+
 			debugger
 
 			if (HANDSHAKE_SUCCESS) {
