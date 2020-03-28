@@ -31,8 +31,6 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 
 			console.warn('SUCCESSFUL HANDSHAKE? ', HANDSHAKE_SUCCESS)
 
-			debugger
-
 			if (HANDSHAKE_SUCCESS) {
 				// message for this reader only
 
@@ -51,14 +49,12 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 					// success!
 					console.log('Success! Clearing chunks')
 					this.pendingTCPChunks = []
+					this.readMessage(info)
 				} catch (error) {
 					// still an error
 					console.warn('Adding to pending chunk => ', info, error)
 					this.pendingTCPChunks.push(info)
-					return
 				}
-
-				this.readMessage(info)
 			}
 		})
 		this.socket.onError(error => this.fireError(error))
