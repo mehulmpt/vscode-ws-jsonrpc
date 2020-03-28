@@ -6,6 +6,17 @@
 import { DataCallback, AbstractMessageReader } from 'vscode-jsonrpc/lib/messageReader'
 import { IWebSocket } from './socket'
 
+function sliceAnyHeaders(string: string) {
+	// ! TODO: Fix this "hacky" slice
+	const splitter = string.split('\r\n')
+
+	if (splitter.length > 1) {
+		// content headers might be present
+		return splitter[1]
+	}
+	return splitter[0]
+}
+
 export class WebSocketMessageReader extends AbstractMessageReader {
 	protected state: 'initial' | 'listening' | 'closed' = 'initial'
 	protected callback: DataCallback | undefined
@@ -18,10 +29,13 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 		this.socket.onMessage((message: ArrayBuffer | string) => {
 			const HANDSHAKE_SUCCESS = typeof message !== 'string'
 			if (HANDSHAKE_SUCCESS) {
-				// message for this only
+				// message for this reader only
 
 				let utf8decoder = new TextDecoder()
-				let info = utf8decoder.decode(new Uint8Array(message as ArrayBuffer))
+				let info = sliceAnyHeaders(
+					utf8decoder.decode(new Uint8Array(message as ArrayBuffer))
+				)
+
 				// debugger
 				try {
 					// docker container could send data in chunks
