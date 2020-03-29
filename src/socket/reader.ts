@@ -24,6 +24,8 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 
 	pendingTCPChunk: string = ''
 
+	discardChunkTimeout: any
+
 	getReadableChunks(data: string) {
 		// Explanation:
 		// 0. Remove newlines
@@ -32,7 +34,7 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 		// 3. It'll also match } followed by a $ in case a perfect chunk arrives
 		// 4. It'll also match only opening { without a closing json matching a broken chunk (parent chunk)
 		// 5. It'll also match a closing } without an opening } matching a broken chunk (child chunk)
-
+		clearTimeout(this.discardChunkTimeout)
 		data = data.replace(/\r|\n/gm, '')
 
 		const regex =
@@ -42,7 +44,6 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 
 		let match
 
-		debugger
 		while (true) {
 			match = regex.exec(data)
 			if (!match) break
@@ -66,6 +67,9 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 
 		if (this.pendingTCPChunk !== '') {
 			// try to parse the just receievd corrupted payload?
+			this.discardChunkTimeout = setTimeout(() => {
+				this.pendingTCPChunk = ''
+			}, 5000)
 			try {
 				const payload = JSON.parse(this.pendingTCPChunk)
 				// success
@@ -75,6 +79,7 @@ export class WebSocketMessageReader extends AbstractMessageReader {
 				console.log('Sending corrupted payload to read successfully')
 			} catch (error) {
 				// corrupted payload
+
 				console.log('Still waiting for more data....')
 			}
 		}

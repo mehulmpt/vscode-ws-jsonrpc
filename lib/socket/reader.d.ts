@@ -9,6 +9,7 @@ export declare class WebSocketMessageReader extends AbstractMessageReader {
         error?: any;
     }[];
     pendingTCPChunk: string;
+    discardChunkTimeout: any;
     getReadableChunks(data: string): void;
     constructor(socket: IWebSocket);
     listen(callback: DataCallback): void;

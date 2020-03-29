@@ -20,16 +20,20 @@ export function listen(options: {
 		const connection = createWebSocketConnection(socket, logger)
 		onConnection(connection)
 	} else {
-		webSocket.onopen = () => {
+		webSocket.addEventListener('open', () => {
 			const connection = createWebSocketConnection(socket, logger)
 			onConnection(connection)
-		}
+		})
 	}
 }
 
 export function toSocket(webSocket: WebSocket): IWebSocket {
 	return {
-		send: content => webSocket.send(content),
+		send: (content: Buffer) => {
+			const t = new TextDecoder()
+			console.log('>>> TO LSP = ' + t.decode(new Uint8Array(content)))
+			webSocket.send(content)
+		},
 		onMessage: cb => webSocket.addEventListener('message', event => cb(event.data)),
 		onError: cb =>
 			webSocket.addEventListener('error', event => {
@@ -38,6 +42,6 @@ export function toSocket(webSocket: WebSocket): IWebSocket {
 				}
 			}),
 		onClose: cb => webSocket.addEventListener('close', event => cb(event.code, event.reason)),
-		dispose: () => webSocket.close()
+		dispose: () => console.warn('Trying to dispose websocket connection from WS JSONRPC')
 	}
 }
