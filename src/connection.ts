@@ -33,12 +33,9 @@ export function toSocket(webSocket: WebSocket): IWebSocket {
 			const t = new TextDecoder()
 			const text = t.decode(new Uint8Array(content))
 
-			if (
-				text.length < 200 &&
-				(text.includes('data did not match any variant of untagged enum Documentation') ||
-					text.includes('"method":"exit"'))
-			) {
-				console.warn('Prevented LSP crash.')
+			// RUSTLANG CRASHES HERE FOR SOME WEIRD REASON. FIX THIS PATCH
+			if (text.includes('"documentation":{')) {
+				console.warn('crash!')
 				return
 			}
 
